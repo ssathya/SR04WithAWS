@@ -3,14 +3,19 @@
 #include <ESP8266WiFi.h>
 #include <FS.h>
 #include <ArduinoJson.h>
+#include <Ultrasonic.h>
 
 //defines
 #define OnBoardLED 2
+#define TRIG_PIN 16
+#define ECHO_PIN 0
 
 //variables
 bool ledStatus;
 String ssid;
 String password;
+String output;
+Ultrasonic us(TRIG_PIN, ECHO_PIN);
 //Used by application.
 void BeginSPIFFS()
 {
@@ -74,7 +79,7 @@ void SetupWiFiConnection()
     Serial.print("Connected, IP address: ");
     Serial.println(WiFi.localIP());
 }
-//Arduion methods
+
 void setup()
 {
     // put your setup code here, to run once:
@@ -90,11 +95,32 @@ void setup()
 
     EndSPIFFS();
 }
+void MeasureUltrasound()
+{
+    us.measure();
+    float valuse_in_cm = us.get_cm();
+    float value_in_inch = valuse_in_cm / 2.54;
+    //Serial.println(valuse_in_cm, 3);
+    /*Serial.print("Value in Inch ");
+    Serial.println(value_in_inch, 3);*/ 
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject &root = jsonBuffer.createObject();
+    root["distance"] = value_in_inch;    
+    output = "";
+    root.printTo(output);
+    //Serial.println(output);
+}
 
+//Arduion methods
 void loop()
 {
     // put your main code here, to run repeatedly:
+    MeasureUltrasound();
+    
     ledStatus = ledStatus == true ? false : true;
     digitalWrite(OnBoardLED, ledStatus == true ? HIGH : LOW);
     delay(1000);
+
+    //Comment out this when not needed
+    Serial.println(output);
 }
