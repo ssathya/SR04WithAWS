@@ -4,18 +4,25 @@
 #include <FS.h>
 #include <ArduinoJson.h>
 #include <Ultrasonic.h>
+#include <PubSubClient.h>
 
 //defines
 #define OnBoardLED 2
 #define TRIG_PIN 16
 #define ECHO_PIN 0
-
+void callback(char* topic, byte* payload, unsigned int length);
 //variables
 bool ledStatus;
 String ssid;
 String password;
 String output;
+const char* AWS_endpoint = "a2oe8lf2wwvqnz.iot.us-east-2.amazonaws.com"; //MQTT broker ip
+
+
 Ultrasonic us(TRIG_PIN, ECHO_PIN);
+WiFiClientSecure espClient;
+PubSubClient client(AWS_endpoint, 8883, callback, espClient); 
+
 //Used by application.
 void BeginSPIFFS()
 {
@@ -61,6 +68,7 @@ void ReadWiFiConfig()
     ssid = (const char *)root["ssid"];
     password = (const char *)root["password"];
     //Serial.printf ("File values %s, %s\n", ssid.c_str(), password.c_str());
+    f.close();
     return;
 }
 void SetupWiFiConnection()
@@ -80,6 +88,48 @@ void SetupWiFiConnection()
     Serial.println(WiFi.localIP());
 }
 
+void ProcessCertificatesAndKey()
+{
+    File cert = SPIFFS.open("/cert.der", "r");
+    if (!cert)
+    {
+        Serial.println("Failed to open cert file");
+        return;
+    }
+    delay(1000);
+    if (!espClient.loadCertificate(cert))
+    {
+        Serial.println("Certificate not loade");
+        return;    
+    }
+    File privateKey = SPIFFS.open("/private.der","r");
+    if (!privateKey)
+    {
+        Serial.println("Failed to open private file");
+        return;
+    }
+    delay(1000);
+    if(!espClient.loadPrivateKey(privateKey))
+    {
+        Serial.println("Private key not loade");
+        return; 
+    }
+    Serial.println("Keys loaded!");
+    Serial.print("Heap: "); Serial.println(ESP.getFreeHeap());
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (unsigned int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+
+}
+
+//Arduino Specific
 void setup()
 {
     // put your setup code here, to run once:
@@ -92,7 +142,7 @@ void setup()
     Serial.println();
     BeginSPIFFS();
     SetupWiFiConnection();
-
+    ProcessCertificatesAndKey();
     EndSPIFFS();
 }
 void MeasureUltrasound()
