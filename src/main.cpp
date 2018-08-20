@@ -17,7 +17,7 @@ String ssid;
 String password;
 String output;
 const char* AWS_endpoint = "a2oe8lf2wwvqnz.iot.us-east-2.amazonaws.com"; //MQTT broker ip
-
+long lastMsg = 0;
 
 Ultrasonic us(TRIG_PIN, ECHO_PIN);
 WiFiClientSecure espClient;
@@ -128,8 +128,36 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println();
 
 }
+void MeasureUltrasound()
+{
+    long now = millis();
+    if (now < lastMsg) //handle rollover
+    {
+        lastMsg = now;
+    }
+    if (now - lastMsg < 60000)
+    {
+        return;
+    }
+    lastMsg = now;
+    Serial.println("Going to measure values");    
+    us.measure();
+    float valuse_in_cm = us.get_cm();
+    float value_in_inch = valuse_in_cm / 2.54;
+    //Serial.println(valuse_in_cm, 3);
+    /*Serial.print("Value in Inch ");
+    Serial.println(value_in_inch, 3);*/ 
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject &root = jsonBuffer.createObject();
+    root["distance"] = value_in_inch;    
+    output = "";
+    root.printTo(output);
+    client.publish("outTopic", output.c_str());    
+    //Comment out this when not needed
+    Serial.println(output);
+}
 
-//Arduino Specific
+//Arduion methods
 void setup()
 {
     // put your setup code here, to run once:
@@ -145,23 +173,9 @@ void setup()
     ProcessCertificatesAndKey();
     EndSPIFFS();
 }
-void MeasureUltrasound()
-{
-    us.measure();
-    float valuse_in_cm = us.get_cm();
-    float value_in_inch = valuse_in_cm / 2.54;
-    //Serial.println(valuse_in_cm, 3);
-    /*Serial.print("Value in Inch ");
-    Serial.println(value_in_inch, 3);*/ 
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject &root = jsonBuffer.createObject();
-    root["distance"] = value_in_inch;    
-    output = "";
-    root.printTo(output);
-    //Serial.println(output);
-}
 
-//Arduion methods
+
+
 void loop()
 {
     // put your main code here, to run repeatedly:
@@ -171,6 +185,5 @@ void loop()
     digitalWrite(OnBoardLED, ledStatus == true ? HIGH : LOW);
     delay(1000);
 
-    //Comment out this when not needed
-    Serial.println(output);
+    
 }
