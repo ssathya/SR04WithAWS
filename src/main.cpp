@@ -13,7 +13,7 @@ String ssid;
 String password;
 //Used by application.
 void BeginSPIFFS()
-{    
+{
     if (!SPIFFS.begin())
     {
         Serial.println("Failed to mount file system");
@@ -58,21 +58,10 @@ void ReadWiFiConfig()
     //Serial.printf ("File values %s, %s\n", ssid.c_str(), password.c_str());
     return;
 }
-
-//Arduion methods
-void setup() {
-    // put your setup code here, to run once:
-    pinMode(OnBoardLED, OUTPUT);
-
-
-    Serial.begin(115200);
-    delay(2000);
-    while (!Serial)
-        ;
-    Serial.println();    
-    BeginSPIFFS();
+void SetupWiFiConnection()
+{
     ReadWiFiConfig();
-        WiFi.begin(ssid.c_str(), password.c_str());
+    WiFi.begin(ssid.c_str(), password.c_str());
 
     Serial.print("Connecting");
     while (WiFi.status() != WL_CONNECTED)
@@ -84,10 +73,26 @@ void setup() {
 
     Serial.print("Connected, IP address: ");
     Serial.println(WiFi.localIP());
+}
+//Arduion methods
+void setup()
+{
+    // put your setup code here, to run once:
+    pinMode(OnBoardLED, OUTPUT);
+
+    Serial.begin(115200);
+    delay(2000);
+    while (!Serial)
+        ;
+    Serial.println();
+    BeginSPIFFS();
+    SetupWiFiConnection();
+
     EndSPIFFS();
 }
 
-void loop() {
+void loop()
+{
     // put your main code here, to run repeatedly:
     ledStatus = ledStatus == true ? false : true;
     digitalWrite(OnBoardLED, ledStatus == true ? HIGH : LOW);
