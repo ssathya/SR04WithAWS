@@ -18,6 +18,7 @@ String password;
 String output;
 const char* AWS_endpoint = "a2oe8lf2wwvqnz.iot.us-east-2.amazonaws.com"; //MQTT broker ip
 long lastMsg = 0;
+long lastBlinkStatusChange = 0;
 
 Ultrasonic us(TRIG_PIN, ECHO_PIN);
 WiFiClientSecure espClient;
@@ -157,6 +158,21 @@ void MeasureUltrasound()
     Serial.println(output);
 }
 
+void BinkLED ()
+{
+    long now = millis();
+    if (now < lastBlinkStatusChange )
+    {
+        lastBlinkStatusChange = now;
+    }
+    if (now - lastBlinkStatusChange < 1000)
+    {
+        return;
+    }
+    lastBlinkStatusChange = now;
+    ledStatus = ledStatus == true ? false : true;
+    digitalWrite(OnBoardLED, ledStatus == true ? HIGH : LOW);
+}
 //Arduion methods
 void setup()
 {
@@ -179,11 +195,10 @@ void setup()
 void loop()
 {
     // put your main code here, to run repeatedly:
-    MeasureUltrasound();
-    
-    ledStatus = ledStatus == true ? false : true;
-    digitalWrite(OnBoardLED, ledStatus == true ? HIGH : LOW);
-    delay(1000);
-
-    
+    MeasureUltrasound();        
+    BinkLED();
+    if (!client.loop())
+    {
+        Serial.println ("Client.loop returned false");
+    }
 }
