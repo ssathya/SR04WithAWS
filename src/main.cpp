@@ -10,6 +10,8 @@
 #define OnBoardLED 2
 #define TRIG_PIN 16
 #define ECHO_PIN 0
+#define MillisecondsInADay 86400000
+
 void callback(char *topic, byte *payload, unsigned int length);
 //variables
 bool ledStatus;
@@ -211,7 +213,15 @@ void BinkLED()
     ledStatus = ledStatus == true ? false : true;
     digitalWrite(OnBoardLED, ledStatus == true ? HIGH : LOW);
 }
+void CheckIfRebootNeeded()
+{
+    long now = millis();
+    if (now >= MillisecondsInADay)
+    {
+        ESP.restart();
+    }
 
+}
 //Arduion methods
 void setup()
 {
@@ -241,4 +251,5 @@ void loop()
     {
         ReconnectToAWS();
     }
+    CheckIfRebootNeeded();
 }
