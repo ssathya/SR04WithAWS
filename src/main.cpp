@@ -20,6 +20,7 @@ String password;
 String output;
 String publishTopic;
 String readTopic;
+String deviceName;
 
 const char *AWS_endpoint = "a2oe8lf2wwvqnz.iot.us-east-2.amazonaws.com"; //MQTT broker ip
 long lastMsg = 0;
@@ -44,7 +45,8 @@ void setup()
 {
     //code for defaults; can be overwritten down below.
     publishTopic = "/distanceFromIoT";
-    readTopic = "/distanceToIoT";
+    readTopic = "/distanceToIoT/#";
+    deviceName = "NoNameYet";
     // put your setup code here, to run once:
     pinMode(OnBoardLED, OUTPUT);
 

@@ -5,6 +5,7 @@
 #include <ArduinoJson.h>
 #include <Ultrasonic.h>
 #include <PubSubClient.h>
+#include <string.h>
 
 //defines
 #define OnBoardLED 2
@@ -19,6 +20,7 @@ extern String password;
 extern String output;
 extern String publishTopic;
 extern String readTopic;
+extern String deviceName;
 
 extern const char *AWS_endpoint;
 extern long lastMsg;
@@ -154,6 +156,27 @@ void ProcessCertificatesAndKey()
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
+    if (strstr(topic, "DeviceName"))
+    {
+        DynamicJsonBuffer jsonBuffer(512);
+        JsonObject &root = jsonBuffer.parse((const char *)payload);
+        if (root.success())
+        {
+            // /distanceToIoT/DeviceName
+            /*
+            {
+                "deviceName": "FirstDevice"
+            }
+            */
+           const char *a = root["deviceName"];
+           Serial.printf("deviceName sent was %s\n", a);
+            String outObj;
+            root.prettyPrintTo(outObj);
+            Serial.println(outObj);            
+            
+            deviceName = a;
+        }
+    }
     Serial.print("Message arrived [");
     Serial.print(topic);
     Serial.print("] ");
@@ -175,16 +198,15 @@ void MeasureUltrasound()
         return;
     }
     lastMsg = now;
-    Serial.println("Going to measure values");
+    Serial.println("Measuring values from sensor:hc-sr04");
     us.measure();
     float valuse_in_cm = us.get_cm();
     float value_in_inch = valuse_in_cm / 2.54;
-    //Serial.println(valuse_in_cm, 3);
-    /*Serial.print("Value in Inch ");
-    Serial.println(value_in_inch, 3);*/
+
     DynamicJsonBuffer jsonBuffer;
     JsonObject &root = jsonBuffer.createObject();
     root["distance"] = value_in_inch;
+    root["deviceName"] = deviceName;
     output = "";
     root.printTo(output);
     ReconnectToAWS();
@@ -218,5 +240,4 @@ void CheckIfRebootNeeded()
     {
         ESP.restart();
     }
-
 }
