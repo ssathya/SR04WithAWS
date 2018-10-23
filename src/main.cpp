@@ -46,7 +46,7 @@ void setup()
     //code for defaults; can be overwritten down below.
     publishTopic = "/distanceFromIoT";
     readTopic = "/distanceToIoT/#";
-    deviceName = "NoNameYet";
+    deviceName = "NatGarage";
     // put your setup code here, to run once:
     pinMode(OnBoardLED, OUTPUT);
 
